@@ -69,7 +69,11 @@ export default function LogSugar() {
                 mg/dL
               </Txt>
             </Row>
-            {level && lc ? <Pill text={levelLabel[level]} fg={lc.fg} bg={lc.bg} /> : <Txt v="caption">Enter the number from your glucometer</Txt>}
+            {level && lc ? (
+              <View style={{ flexDirection: 'row' }}>
+                <Pill text={levelLabel[level]} fg={lc.fg} bg={lc.bg} />
+              </View>
+            ) : <Txt v="caption">Enter the number from your glucometer</Txt>}
           </Card>
         </Pressable>
 

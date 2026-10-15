@@ -3,6 +3,7 @@ import { DarkTheme, DefaultTheme, router, Stack, ThemeProvider } from 'expo-rout
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useMemo, useRef } from 'react';
+import { Platform } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ymd } from '../lib/date';
 import { ACTION_LOG, ACTION_SNOOZE, ACTION_TAKEN, configureNotifications, NotifData, snooze, syncSchedules } from '../lib/notifications';
@@ -13,8 +14,7 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 configureNotifications();
 
 function NotificationBridge() {
-  const { ready, data, setDose } = useStore();
-  const handled = useRef(new Set<string>());
+  const { ready, data } = useStore();
 
   // Keep scheduled reminders in sync with medicines and reminder settings.
   const scheduleKey = useMemo(
@@ -27,7 +27,17 @@ function NotificationBridge() {
     if (ready && data.profile.onboarded) syncSchedules(dataRef.current);
   }, [scheduleKey, ready, data.profile.onboarded]);
 
-  // Handle taps and action buttons on notifications (also when the app was closed).
+  useEffect(() => {
+    if (ready) SplashScreen.hideAsync().catch(() => {});
+  }, [ready]);
+
+  return Platform.OS === 'web' ? null : <NotificationResponses />;
+}
+
+/** Handles taps and action buttons on notifications (also when the app was closed). Phone only. */
+function NotificationResponses() {
+  const { ready, setDose } = useStore();
+  const handled = useRef(new Set<string>());
   const last = Notifications.useLastNotificationResponse();
   useEffect(() => {
     if (!ready || !last) return;
@@ -48,10 +58,6 @@ function NotificationBridge() {
     if (last.actionIdentifier === ACTION_LOG) Notifications.dismissNotificationAsync(last.notification.request.identifier).catch(() => {});
     Notifications.clearLastNotificationResponse();
   }, [last, ready, setDose]);
-
-  useEffect(() => {
-    if (ready) SplashScreen.hideAsync().catch(() => {});
-  }, [ready]);
 
   return null;
 }
