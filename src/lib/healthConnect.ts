@@ -31,11 +31,16 @@ function hc(): HC | null {
 
 export type Availability = 'available' | 'needs-update' | 'not-installed' | 'unsupported';
 
+let status: number | null = null;
+/** The raw status code from Health Connect's last availability check (1 unavailable, 2 update needed, 3 ready). */
+export const lastStatus = () => status;
+
 export async function availability(): Promise<Availability> {
   const m = hc();
   if (!m) return 'unsupported';
   try {
     const s = await m.getSdkStatus();
+    status = s;
     if (s === m.SdkAvailabilityStatus.SDK_AVAILABLE) return 'available';
     if (s === m.SdkAvailabilityStatus.SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED) return 'needs-update';
     return 'not-installed';

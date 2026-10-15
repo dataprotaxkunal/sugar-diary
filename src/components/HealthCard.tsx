@@ -1,12 +1,17 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
-import { Linking, View } from 'react-native';
+import { Linking, Platform, View } from 'react-native';
 import { relDay, ymd } from '../lib/date';
-import { availability, Availability, openSettings, PLAY_STORE_URL } from '../lib/healthConnect';
+import { availability, Availability, lastStatus, openSettings, PLAY_STORE_URL } from '../lib/healthConnect';
 import { useStore } from '../lib/store';
 import { space, useColors } from '../lib/theme';
 import { useHealthSync } from '../lib/useHealthSync';
 import { Button, Card, Divider, IconBubble, Row, success, Toggle, Txt } from './ui';
+
+function androidRelease() {
+  const c = (Platform as unknown as { constants?: { Release?: string } }).constants;
+  return c?.Release ?? String(Platform.Version);
+}
 
 function ago(ts?: number) {
   if (!ts) return 'never';
@@ -25,6 +30,7 @@ export function HealthCard({ compact }: { compact?: boolean }) {
   const [avail, setAvail] = useState<Availability | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const h = data.health;
+  const status = avail ? lastStatus() : null;
 
   useEffect(() => {
     availability().then(setAvail);
@@ -56,13 +62,52 @@ export function HealthCard({ compact }: { compact?: boolean }) {
   }
 
   if ((avail === 'not-installed' || avail === 'needs-update') && !h.connected) {
+    const androidVer = Platform.OS === 'android' ? `Android ${androidRelease()}` : '';
     return (
       <Card>
         {header}
         <Txt v="sub">
-          {avail === 'needs-update' ? 'Health Connect needs an update before Sugar Diary can use it.' : 'Install Health Connect (free, by Google) so Sugar Diary can read your Google Fit workouts and steps.'}
+          {avail === 'needs-update'
+            ? 'Your phone reports that Health Connect isn’t ready yet. Open it once to finish setup, or update it from the Play Store, then come back here.'
+            : 'Install Health Connect (free, by Google) so Sugar Diary can read your Google Fit workouts and steps.'}
         </Txt>
-        <Button title={avail === 'needs-update' ? 'Update Health Connect' : 'Get Health Connect'} icon="logo-google-playstore" small onPress={() => Linking.openURL(PLAY_STORE_URL)} />
+        {avail === 'needs-update' ? (
+          <Button
+            title="Open Health Connect"
+            icon="open-outline"
+            small
+            onPress={() => {
+              openSettings();
+              setMsg('After setting it up, come back and tap “Check again”.');
+            }}
+          />
+        ) : null}
+        <Button title={avail === 'needs-update' ? 'Update on Play Store' : 'Get Health Connect'} icon="logo-google-playstore" small kind={avail === 'needs-update' ? 'secondary' : 'primary'} onPress={() => Linking.openURL(PLAY_STORE_URL)} />
+        <Row gap={space.sm}>
+          <Button title="Check again" icon="refresh-outline" small kind="ghost" onPress={() => availability().then(setAvail)} style={{ flex: 1 }} />
+          <Button
+            title="Try connecting"
+            icon="link-outline"
+            small
+            kind="ghost"
+            onPress={async () => {
+              setMsg(null);
+              const g = await connectNow();
+              if (g && (g.exercise || g.steps || g.readGlucose || g.writeGlucose)) success();
+              else setMsg('Health Connect didn’t respond. Open it once from your phone’s Settings → Apps → Health Connect (make sure it isn’t disabled), then try again.');
+            }}
+            style={{ flex: 1 }}
+          />
+        </Row>
+        {msg ? (
+          <Txt v="caption" color={c.warn}>
+            {msg}
+          </Txt>
+        ) : null}
+        <Txt v="caption">
+          {androidVer}
+          {status != null ? ` · status ${status}` : ''}
+        </Txt>
       </Card>
     );
   }
