@@ -15,6 +15,25 @@ A personal diabetes companion: blood sugar log, medicine reminders with a "Taken
 
 Notifications repeat daily. Medicine alerts have **✓ Taken** and **Snooze 10 min** buttons.
 
+## Google Fit (via Health Connect)
+
+Google is shutting down the Google Fit APIs in 2026, so Sugar Diary connects through **Health Connect**, Android's shared health store. Google Fit, Samsung Health, Fitbit and many glucometer apps write into it.
+
+What Sugar Diary does once connected:
+- Imports walks and workouts recorded by Google Fit into your Activity ring and exercise chart.
+- Shows daily steps on Home and a steps chart in Insights.
+- Saves your sugar readings to Health Connect (can be turned off).
+- Imports sugar readings from other apps, such as a Bluetooth glucometer app (can be turned off).
+- Syncs automatically when you open the app; you can also tap **Sync now**.
+
+To set it up:
+1. Install the real APK (Option B). Health Connect does not work inside Expo Go.
+2. On Android 13 or older, install **Health Connect** from the Play Store (it's built into Android 14+).
+3. In Google Fit: **Profile → ⚙ Settings → Sync with Health Connect** → turn on.
+4. In Sugar Diary: **Profile → Google Fit & Health Connect → Connect Google Fit**, then allow the items you want.
+
+Requires Android 8.0 or newer. Publishing on the Play Store with Health Connect needs a Health Connect declaration in the Play Console (approval can take about a week).
+
 ## Option A — Try it on your phone in 5 minutes (Expo Go)
 
 1. On your computer install [Node.js 22 LTS](https://nodejs.org).
@@ -25,7 +44,7 @@ Notifications repeat daily. Medicine alerts have **✓ Taken** and **Snooze 10 m
    ```
 3. On your Android phone install **Expo Go** from the Play Store and scan the QR code shown in the terminal (phone and computer on the same Wi-Fi).
 
-Expo Go is for trying the app. Reminders work, but the app icon and name are Expo Go's.
+Expo Go is for trying the app. Reminders work, but the app icon and name are Expo Go's, and Google Fit / Health Connect needs the real install (Option B).
 
 ## Option B — Install it as a real app (APK)
 
@@ -65,10 +84,10 @@ src/app/            screens (Expo Router)
   targets.tsx       target ranges and exercise goal
   onboarding.tsx    first-run setup
 src/components/     UI kit and SVG charts
-src/lib/            data store (AsyncStorage), notifications, health rules, demo data
+src/lib/            data store (AsyncStorage), notifications, Health Connect sync, health rules, demo data
 ```
 
-Built with Expo SDK 57, React Native 0.86, Expo Router, expo-notifications and react-native-svg.
+Built with Expo SDK 57, React Native 0.86, Expo Router, expo-notifications, react-native-health-connect and react-native-svg.
 
 ## Medical note
 

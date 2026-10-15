@@ -2,8 +2,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { KeyboardAvoidingView, Pressable, ScrollView, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { HealthCard } from '../components/HealthCard';
 import { Button, Card, Chip, Field, IconBubble, Row, TimeChip, Toggle, Txt } from '../components/ui';
 import { DIABETES_TYPES } from '../lib/health';
 import { requestPermission } from '../lib/notifications';
@@ -145,6 +146,7 @@ export default function Onboarding() {
               <Txt v="sub">{notifOk === false ? 'You can turn them on later from the Reminders tab.' : 'Needed so reminders reach you even when the app is closed.'}</Txt>
               {!notifOk ? <Button title="Allow notifications" small onPress={async () => setNotifOk(await requestPermission())} /> : null}
             </Card>
+            {Platform.OS === 'android' ? <HealthCard compact /> : null}
           </>
         )}
       </ScrollView>

@@ -7,6 +7,10 @@ export type Reading = {
   ts: number;
   note?: string;
   demo?: boolean;
+  /** Health Connect record id: set when imported from, or saved to, Health Connect. */
+  hcId?: string;
+  /** Where the reading came from when not entered in this app (e.g. a glucometer app). */
+  source?: string;
 };
 
 export type MedForm = 'tablet' | 'insulin' | 'capsule' | 'syrup';
@@ -35,6 +39,9 @@ export type Workout = {
   ts: number;
   note?: string;
   demo?: boolean;
+  hcId?: string;
+  /** App that recorded it, e.g. "Google Fit", when imported from Health Connect. */
+  source?: string;
 };
 
 export type SugarCheck = { id: string; time: string; label: string; enabled: boolean };
@@ -59,4 +66,16 @@ export type AppData = {
   doses: Record<string, DoseLog>; // key: YYYY-MM-DD|medId|HH:MM
   workouts: Workout[];
   hasDemo: boolean;
+  /** Daily step totals from Health Connect, keyed YYYY-MM-DD. */
+  steps: Record<string, number>;
+  health: HealthSettings;
+};
+
+export type HealthSettings = {
+  connected: boolean;
+  lastSync?: number;
+  saveReadings: boolean;
+  importReadings: boolean;
+  /** Health Connect ids the user deleted here, so they are not imported again. */
+  ignored: string[];
 };

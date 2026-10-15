@@ -3,6 +3,7 @@ import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Share, View } from 'react-native';
+import { HealthCard } from '../../components/HealthCard';
 import { Card, Chip, Divider, Field, ListRow, Row, Screen, Txt } from '../../components/ui';
 import { fmtDay, hm, ymd } from '../../lib/date';
 import { activity, ctxLabel, DIABETES_TYPES } from '../../lib/health';
@@ -66,6 +67,8 @@ export default function ProfileTab() {
         </View>
       </Card>
 
+      <HealthCard />
+
       <Card style={{ paddingVertical: space.sm, gap: 0 }}>
         <ListRow icon="speedometer-outline" iconColor={c.primary} iconBg={c.primarySoft} title="Targets & goals" subtitle={`${p.targetLow}–${p.targetHigh} mg/dL · ${p.exerciseGoal} min exercise`} onPress={() => router.push('/targets')} />
         <Divider />
@@ -87,7 +90,7 @@ export default function ProfileTab() {
       <Card style={{ backgroundColor: c.cardAlt, shadowOpacity: 0, elevation: 0, flexDirection: 'row', gap: space.md }}>
         <Ionicons name="lock-closed-outline" size={20} color={c.sub} />
         <Txt v="sub" style={{ flex: 1 }}>
-          Your health data stays on this phone. Nothing is uploaded. Sugar Diary helps you keep a record. It is not medical advice, so talk to your doctor before changing medicines.
+          Your health data stays on this phone. Nothing is uploaded to the internet; if you connect Google Fit, data is shared only through Health Connect on this phone. Sugar Diary helps you keep a record. It is not medical advice, so talk to your doctor before changing medicines.
         </Txt>
       </Card>
       <Txt v="caption" center>

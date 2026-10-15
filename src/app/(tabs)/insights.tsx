@@ -31,6 +31,9 @@ export default function Insights() {
   const exercise = useMemo(() => days.map((d) => data.workouts.filter((w) => ymd(w.ts) === d).reduce((a, w) => a + w.minutes, 0)), [data.workouts, days]);
   const exTotal = exercise.reduce((a, b) => a + b, 0);
   const goalDays = exercise.filter((m) => m >= p.exerciseGoal).length;
+  const steps = useMemo(() => days.map((d) => data.steps[d] ?? null), [data.steps, days]);
+  const stepVals = steps.filter((v): v is number => v != null);
+  const stepAvg = stepVals.length ? stepVals.reduce((a, b) => a + b, 0) / stepVals.length : null;
 
   const ctxRows = CONTEXTS.map((k) => {
     const vals = readings.filter((r) => r.ctx === k.key).map((r) => r.value);
@@ -149,6 +152,20 @@ export default function Insights() {
             <DayBars days={days} values={exercise} max={Math.max(p.exerciseGoal * 1.4, ...exercise, 10)} goal={p.exerciseGoal} format={(v) => String(Math.round(v))} colorFor={(v) => (v >= p.exerciseGoal ? c.ex : c.warnSoft)} />
             <Txt v="caption">Dashed line marks your daily goal of {p.exerciseGoal} minutes.</Txt>
           </Card>
+
+          {stepAvg != null ? (
+            <Card>
+              <Row style={{ justifyContent: 'space-between' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
+                  <IconBubble name="footsteps" color={c.primary} bg={c.primarySoft} size={32} />
+                  <Txt v="h3">Steps</Txt>
+                </View>
+                <Txt v="sub">avg {Math.round(stepAvg).toLocaleString('en-IN')} / day</Txt>
+              </Row>
+              <DayBars days={days} values={steps} max={Math.max(10000, ...stepVals) * 1.1} goal={7000} format={(v) => (v >= 1000 ? `${(v / 1000).toFixed(v >= 10000 ? 0 : 1)}k` : String(Math.round(v)))} colorFor={(v) => (v >= 7000 ? c.primary : c.primarySoft)} />
+              <Txt v="caption">From Google Fit via Health Connect. Dashed line marks 7,000 steps.</Txt>
+            </Card>
+          ) : null}
 
           <Button title="See all readings" kind="secondary" icon="list-outline" onPress={() => router.push('/history')} />
           <Txt v="caption" center>

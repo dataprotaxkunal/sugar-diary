@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { Platform, Pressable, View } from 'react-native';
 import { Ring, Sparkline } from '../../components/charts';
 import { Button, Card, IconBubble, Pill, Row, Screen, SectionHeader, success, tap, Txt } from '../../components/ui';
 import { fmtClock, fmtLongDate, fmtTime, greeting, lastDays, relDay, ymd } from '../../lib/date';
@@ -41,6 +41,7 @@ export default function Home() {
   const done = plan.filter((i) => (i.kind === 'med' ? i.status != null : i.done)).length;
   const exMin = exerciseMinutes(data, today);
   const lastWorkout = data.workouts[data.workouts.length - 1];
+  const stepsToday = data.steps[today] as number | undefined;
   const tip = TIPS[now.getDate() % TIPS.length];
   const initial = (p.name || 'You').trim().charAt(0).toUpperCase();
 
@@ -167,25 +168,50 @@ export default function Home() {
 
       {/* Exercise */}
       <SectionHeader title="Activity" action="Log" onAction={() => router.push('/log-exercise')} />
-      <Card onPress={() => router.push('/log-exercise')} style={{ flexDirection: 'row', alignItems: 'center', gap: space.lg }}>
-        <Ring progress={exMin / p.exerciseGoal} size={84} stroke={9} color={c.ex} track={c.exSoft}>
-          <Txt v="h2" style={{ fontVariant: ['tabular-nums'] }}>
-            {exMin}
-          </Txt>
-          <Txt v="caption" style={{ marginTop: -2 }}>
-            min
-          </Txt>
-        </Ring>
-        <View style={{ flex: 1, gap: 4 }}>
-          <Txt v="h3">{exMin >= p.exerciseGoal ? 'Goal reached! 🎉' : `${p.exerciseGoal - exMin} min to your goal`}</Txt>
-          <Txt v="sub">Daily goal: {p.exerciseGoal} minutes</Txt>
-          {lastWorkout ? (
-            <Txt v="caption">
-              Last: {activity(lastWorkout.type).label}, {lastWorkout.minutes} min · {relDay(lastWorkout.ts)}
+      <Card onPress={() => router.push('/log-exercise')}>
+        <Row gap={space.lg}>
+          <Ring progress={exMin / p.exerciseGoal} size={84} stroke={9} color={c.ex} track={c.exSoft}>
+            <Txt v="h2" style={{ fontVariant: ['tabular-nums'] }}>
+              {exMin}
             </Txt>
-          ) : null}
-        </View>
-        <Ionicons name="add-circle" size={30} color={c.ex} />
+            <Txt v="caption" style={{ marginTop: -2 }}>
+              min
+            </Txt>
+          </Ring>
+          <View style={{ flex: 1, gap: 4 }}>
+            <Txt v="h3">{exMin >= p.exerciseGoal ? 'Goal reached! 🎉' : `${p.exerciseGoal - exMin} min to your goal`}</Txt>
+            <Txt v="sub">Daily goal: {p.exerciseGoal} minutes</Txt>
+            {lastWorkout ? (
+              <Txt v="caption">
+                Last: {activity(lastWorkout.type).label}, {lastWorkout.minutes} min · {relDay(lastWorkout.ts)}
+                {lastWorkout.source ? ` · ${lastWorkout.source}` : ''}
+              </Txt>
+            ) : null}
+          </View>
+          <Ionicons name="add-circle" size={30} color={c.ex} />
+        </Row>
+        {stepsToday != null ? (
+          <Row style={{ backgroundColor: c.cardAlt, borderRadius: 14, padding: space.md }} gap={space.md}>
+            <Ionicons name="footsteps" size={20} color={c.primary} />
+            <View style={{ flex: 1 }}>
+              <Txt v="h3" style={{ fontVariant: ['tabular-nums'] }}>
+                {stepsToday.toLocaleString('en-IN')} steps
+              </Txt>
+              <Txt v="caption">Today · from Google Fit via Health Connect</Txt>
+            </View>
+          </Row>
+        ) : null}
+        {!data.health.connected && Platform.OS === 'android' ? (
+          <Pressable onPress={() => router.navigate('/profile')} hitSlop={6}>
+            <Row gap={6}>
+              <Ionicons name="link-outline" size={16} color={c.primary} />
+              <Txt v="sub" color={c.primary} style={{ fontWeight: '700', flex: 1 }}>
+                Connect Google Fit to import walks and steps automatically
+              </Txt>
+              <Ionicons name="chevron-forward" size={16} color={c.primary} />
+            </Row>
+          </Pressable>
+        ) : null}
       </Card>
 
       {/* Tip */}

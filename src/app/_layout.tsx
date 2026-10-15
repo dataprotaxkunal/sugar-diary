@@ -9,6 +9,7 @@ import { ymd } from '../lib/date';
 import { ACTION_LOG, ACTION_SNOOZE, ACTION_TAKEN, configureNotifications, NotifData, snooze, syncSchedules } from '../lib/notifications';
 import { StoreProvider, useStore } from '../lib/store';
 import { useColors, useIsDark } from '../lib/theme';
+import { useAutoHealthSync } from '../lib/useHealthSync';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 configureNotifications();
@@ -62,6 +63,11 @@ function NotificationResponses() {
   return null;
 }
 
+function HealthAutoSync() {
+  useAutoHealthSync();
+  return null;
+}
+
 function Navigator() {
   const c = useColors();
   const dark = useIsDark();
@@ -90,6 +96,7 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <StoreProvider>
         <NotificationBridge />
+        <HealthAutoSync />
         <Navigator />
       </StoreProvider>
     </SafeAreaProvider>

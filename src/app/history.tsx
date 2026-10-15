@@ -4,6 +4,7 @@ import { Alert, Pressable, SectionList, View } from 'react-native';
 import { Chip, IconBubble, Pill, Txt } from '../components/ui';
 import { fmtClock, relDay, ymd } from '../lib/date';
 import { activity, classify, ctxLabel, levelColors, levelLabel } from '../lib/health';
+import { deleteSavedReading } from '../lib/healthConnect';
 import { useStore } from '../lib/store';
 import { space, useColors } from '../lib/theme';
 
@@ -31,7 +32,17 @@ export default function History() {
   const confirmDelete = (e: Entry) =>
     Alert.alert('Delete this entry?', undefined, [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => (e.kind === 'sugar' ? deleteReading(e.id) : deleteWorkout(e.id)) },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: () => {
+          if (e.kind === 'sugar') {
+            const r = data.readings.find((x) => x.id === e.id);
+            if (r?.hcId && !r.source) deleteSavedReading(r.id);
+            deleteReading(e.id);
+          } else deleteWorkout(e.id);
+        },
+      },
     ]);
 
   return (
@@ -77,6 +88,7 @@ export default function History() {
                   <Txt v="h3">{ctxLabel(r.ctx)}</Txt>
                   <Txt v="caption" numberOfLines={2}>
                     {fmtClock(r.ts)}
+                    {r.source ? ` · ${r.source}` : ''}
                     {r.note ? ` · ${r.note}` : ''}
                   </Txt>
                 </View>
@@ -101,6 +113,7 @@ export default function History() {
                 </Txt>
                 <Txt v="caption" numberOfLines={2}>
                   {fmtClock(w.ts)}
+                  {w.source ? ` · ${w.source}` : ''}
                   {w.note ? ` · ${w.note}` : ''}
                 </Txt>
               </View>
