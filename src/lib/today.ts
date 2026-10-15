@@ -31,6 +31,7 @@ export function todayPlan(data: AppData, now = new Date()): PlanItem[] {
   const todaysCtx = new Set(data.readings.filter((r) => ymd(r.ts) === today).map((r) => r.ctx));
   for (const c of data.profile.sugarChecks) {
     if (!c.enabled) continue;
+    if (c.days && c.days.length && c.days.length < 7 && !c.days.includes(now.getDay())) continue;
     items.push({ kind: 'sugar', key: 'sugar-' + c.id, time: c.time, ctx: c.label, done: todaysCtx.has(c.label as never), state: timeState(c.time, now) });
   }
   return items.sort((a, b) => a.time.localeCompare(b.time));

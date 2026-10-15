@@ -3,7 +3,7 @@
     "name": "Sugar Diary",
     "slug": "sugar-diary",
     "scheme": "sugardiary",
-    "version": "1.0.2",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -12,7 +12,7 @@
     },
     "android": {
       "package": "com.sugardiary.app",
-      "versionCode": 3,
+      "versionCode": 4,
       "adaptiveIcon": {
         "backgroundColor": "#0F7A63",
         "foregroundImage": "./assets/android-icon-foreground.png",

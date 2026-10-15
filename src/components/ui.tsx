@@ -71,9 +71,11 @@ export function Screen({
   scroll = true,
   padTop = true,
   contentStyle,
+  scrollEnabled = true,
 }: {
   children: React.ReactNode;
   scroll?: boolean;
+  scrollEnabled?: boolean;
   padTop?: boolean;
   contentStyle?: StyleProp<ViewStyle>;
 }) {
@@ -82,7 +84,7 @@ export function Screen({
   const pad: ViewStyle = { paddingTop: padTop ? insets.top + space.md : space.md, paddingHorizontal: space.lg, paddingBottom: 120, gap: space.lg };
   if (!scroll) return <View style={[{ flex: 1, backgroundColor: c.bg }, pad, contentStyle]}>{children}</View>;
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: c.bg }} contentContainerStyle={[pad, contentStyle]} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+    <ScrollView scrollEnabled={scrollEnabled} style={{ flex: 1, backgroundColor: c.bg }} contentContainerStyle={[pad, contentStyle]} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
       {children}
     </ScrollView>
   );

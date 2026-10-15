@@ -13,7 +13,8 @@ const CAT_SUGAR = 'sugar-check';
 export type NotifData =
   | { kind: 'med'; medId: string; time: string }
   | { kind: 'sugar'; ctx: string }
-  | { kind: 'exercise' };
+  | { kind: 'exercise' }
+  | { kind: 'early' };
 
 let configured = false;
 
@@ -82,43 +83,73 @@ export async function syncSchedules(data: AppData) {
     if (!(await Notifications.getPermissionsAsync()).granted) return;
 
     const jobs: Promise<string>[] = [];
+    const early = data.profile.earlyReminderMin ?? 0;
+    const T = Notifications.SchedulableTriggerInputTypes;
+
+    /** Schedules a repeating alert at `time` on the given weekdays (0–6, Sunday = 0), or every day. */
+    const at = (time: string, days: number[] | undefined, minutesBefore: number, channelId: string, content: Notifications.NotificationContentInput) => {
+      let { h, m } = parseHM(time);
+      let total = h * 60 + m - minutesBefore;
+      let dayShift = 0;
+      if (total < 0) {
+        total += 1440;
+        dayShift = -1;
+      }
+      h = Math.floor(total / 60);
+      m = total % 60;
+      const everyDay = !days || days.length === 0 || days.length === 7;
+      if (everyDay) {
+        jobs.push(Notifications.scheduleNotificationAsync({ content, trigger: { type: T.DAILY, hour: h, minute: m, channelId } }));
+      } else {
+        for (const d of days!) {
+          const wd = ((d + dayShift + 7) % 7) + 1; // expo: 1 = Sunday
+          jobs.push(Notifications.scheduleNotificationAsync({ content, trigger: { type: T.WEEKLY, weekday: wd, hour: h, minute: m, channelId } }));
+        }
+      }
+    };
+
     for (const med of data.medicines) {
       if (!med.active || med.demo) continue;
       for (const time of med.times) {
-        const { h, m } = parseHM(time);
         const d: NotifData = { kind: 'med', medId: med.id, time };
-        jobs.push(
-          Notifications.scheduleNotificationAsync({
-            content: {
-              title: `💊 Time for ${med.name}`,
-              body: [med.dose, mealLabel(med.meal), fmtTime(time)].filter(Boolean).join(' · '),
-              data: d,
-              categoryIdentifier: CAT_DOSE,
-              sound: 'default',
-              color: '#0F7A63',
-            },
-            trigger: { type: Notifications.SchedulableTriggerInputTypes.DAILY, hour: h, minute: m, channelId: 'medicine' },
-          }),
-        );
+        const detail = [med.dose, mealLabel(med.meal)].filter(Boolean).join(' · ');
+        at(time, undefined, 0, 'medicine', {
+          title: `💊 Time for ${med.name}`,
+          body: [detail, fmtTime(time)].filter(Boolean).join(' · '),
+          data: d,
+          categoryIdentifier: CAT_DOSE,
+          sound: 'default',
+          color: '#0F7A63',
+        });
+        if (early > 0)
+          at(time, undefined, early, 'medicine', {
+            title: `⏰ In ${early} min: ${med.name}`,
+            body: `${detail ? detail + ' · ' : ''}due at ${fmtTime(time)}. Keep it ready.`,
+            data: { kind: 'early' },
+            sound: 'default',
+            color: '#0F7A63',
+          });
       }
     }
     for (const c of data.profile.sugarChecks) {
       if (!c.enabled) continue;
-      const { h, m } = parseHM(c.time);
       const d: NotifData = { kind: 'sugar', ctx: c.label };
-      jobs.push(
-        Notifications.scheduleNotificationAsync({
-          content: {
-            title: '🩸 Time to check your sugar',
-            body: `${labelFor(c.label)} reading. Tap to log it.`,
-            data: d,
-            categoryIdentifier: CAT_SUGAR,
-            sound: 'default',
-            color: '#0F7A63',
-          },
-          trigger: { type: Notifications.SchedulableTriggerInputTypes.DAILY, hour: h, minute: m, channelId: 'health' },
-        }),
-      );
+      at(c.time, c.days, 0, 'health', {
+        title: '🩸 Time to check your sugar',
+        body: `${labelFor(c.label)} reading. Tap to log it.`,
+        data: d,
+        categoryIdentifier: CAT_SUGAR,
+        sound: 'default',
+        color: '#0F7A63',
+      });
+      if (early > 0)
+        at(c.time, c.days, early, 'health', {
+          title: `⏰ Sugar test in ${early} min`,
+          body: `${labelFor(c.label)} reading at ${fmtTime(c.time)}.${c.label === 'fasting' ? ' Don’t eat or drink tea before it.' : ''}`,
+          data: { kind: 'early' },
+          sound: 'default',
+          color: '#0F7A63',
+        });
     }
     const ex = data.profile.exerciseReminder;
     if (ex.enabled) {

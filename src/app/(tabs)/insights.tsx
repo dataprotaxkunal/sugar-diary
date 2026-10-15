@@ -1,10 +1,11 @@
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';
-import { DayBars, GlucoseChart, HBars } from '../../components/charts';
+import { DayBars, HBars } from '../../components/charts';
+import { ZoomGlucoseChart } from '../../components/ZoomChart';
 import { Button, Card, EmptyState, IconBubble, Row, Screen, Txt } from '../../components/ui';
 import { lastDays, ymd } from '../../lib/date';
-import { classify, CONTEXTS, levelColors, stats } from '../../lib/health';
+import { classify, CONTEXTS, levelColors, plannedTestsPerWeek, stats } from '../../lib/health';
 import { useStore } from '../../lib/store';
 import { radius, space, useColors } from '../../lib/theme';
 import { adherenceByDay } from '../../lib/today';
@@ -20,6 +21,7 @@ export default function Insights() {
   const { data, loadDemo } = useStore();
   const p = data.profile;
   const [range, setRange] = useState(7);
+  const [chartActive, setChartActive] = useState(false);
 
   const days = useMemo(() => lastDays(range), [range]);
   const daySet = useMemo(() => new Set(days), [days]);
@@ -31,6 +33,10 @@ export default function Insights() {
   const exercise = useMemo(() => days.map((d) => data.workouts.filter((w) => ymd(w.ts) === d).reduce((a, w) => a + w.minutes, 0)), [data.workouts, days]);
   const exTotal = exercise.reduce((a, b) => a + b, 0);
   const goalDays = exercise.filter((m) => m >= p.exerciseGoal).length;
+  const testsPerDay = useMemo(() => days.map((d) => readings.filter((r) => ymd(r.ts) === d).length), [readings, days]);
+  const plannedWeek = plannedTestsPerWeek(p.sugarChecks);
+  const plannedDay = plannedWeek / 7;
+  const testsPerWeekActual = (testsPerDay.reduce((a, b) => a + b, 0) / range) * 7;
   const steps = useMemo(() => days.map((d) => data.steps[d] ?? null), [data.steps, days]);
   const stepVals = steps.filter((v): v is number => v != null);
   const stepAvg = stepVals.length ? stepVals.reduce((a, b) => a + b, 0) / stepVals.length : null;
@@ -45,7 +51,7 @@ export default function Insights() {
   const empty = data.readings.length === 0 && data.workouts.length === 0;
 
   return (
-    <Screen>
+    <Screen scrollEnabled={!chartActive}>
       <Row style={{ justifyContent: 'space-between' }}>
         <Txt v="h1">Insights</Txt>
         <View style={{ flexDirection: 'row', backgroundColor: c.cardAlt, borderRadius: radius.md, padding: 4 }}>
@@ -81,16 +87,17 @@ export default function Insights() {
               <Txt v="h3">Blood sugar trend</Txt>
               {s.n ? (
                 <Txt v="caption">
-                  Min {s.min} · Max {s.max}
+                  {range}D min {s.min} · max {s.max}
                 </Txt>
               ) : null}
             </Row>
-            <GlucoseChart readings={readings} days={days} profile={p} />
+            <ZoomGlucoseChart readings={data.readings} profile={p} windowDays={range} onActiveChange={setChartActive} />
             <Row gap={space.md} style={{ flexWrap: 'wrap' }}>
               <Legend color={c.good} text="In range" />
               <Legend color={c.warn} text="High" />
               <Legend color={c.bad} text="Low / very high" />
               <Legend color={c.band} text="Target band" square />
+              <Legend color={c.primary} text="Daily average (zoomed out)" />
             </Row>
           </Card>
 
@@ -110,6 +117,28 @@ export default function Insights() {
               </Row>
             </Card>
           ) : null}
+
+          {/* Testing frequency */}
+          <Card>
+            <Row style={{ justifyContent: 'space-between' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
+                <IconBubble name="water" color={c.bad} bg={c.badSoft} size={32} />
+                <Txt v="h3">Testing frequency</Txt>
+              </View>
+              <Pressable onPress={() => router.navigate('/reminders')} hitSlop={8}>
+                <Txt v="sub" color={c.primary} style={{ fontWeight: '700' }}>
+                  Change
+                </Txt>
+              </Pressable>
+            </Row>
+            <Row gap={space.sm}>
+              <MiniFact value={(testsPerDay.reduce((a, b) => a + b, 0) / range).toFixed(1)} label="tests / day" />
+              <MiniFact value={`${testsPerDay.filter((n) => n > 0).length}/${range}`} label="days tested" />
+              <MiniFact value={String(Math.round(testsPerWeekActual))} label={`a week · plan ${plannedWeek}`} accent={plannedWeek && testsPerWeekActual >= plannedWeek * 0.8 ? c.good : c.warn} />
+            </Row>
+            <DayBars days={days} values={testsPerDay} max={Math.max(4, ...testsPerDay, plannedDay)} goal={plannedDay || undefined} format={(v) => String(Math.round(v))} colorFor={(v) => (v >= Math.max(1, Math.floor(plannedDay)) ? c.bad : c.badSoft)} height={130} />
+            <Txt v="caption">Readings logged each day.{plannedDay ? ` Dashed line is your plan (${plannedWeek} a week).` : ' Set a testing plan under Reminders.'}</Txt>
+          </Card>
 
           {/* By context */}
           {ctxRows.length ? (
@@ -189,6 +218,20 @@ export default function Insights() {
       </Card>
     );
   }
+}
+
+function MiniFact({ value, label, accent }: { value: string; label: string; accent?: string }) {
+  const c = useColors();
+  return (
+    <View style={{ flex: 1, backgroundColor: c.cardAlt, borderRadius: 14, padding: space.md, gap: 2 }}>
+      <Txt v="h2" color={accent} style={{ fontVariant: ['tabular-nums'] }}>
+        {value}
+      </Txt>
+      <Txt v="caption" numberOfLines={1}>
+        {label}
+      </Txt>
+    </View>
+  );
 }
 
 function Legend({ color, text, square }: { color: string; text: string; square?: boolean }) {

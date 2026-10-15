@@ -1,8 +1,8 @@
 import { uid, ymd } from './date';
 import type { ActivityType, AppData, DoseLog, Medicine, Reading, Workout } from './types';
 
-/** 30 days of realistic example data so a new user can see what the app looks like. Every item is flagged `demo`. */
-export function makeDemo(): Pick<AppData, 'readings' | 'medicines' | 'doses' | 'workouts'> {
+/** `days` of realistic example data (default 90) so a new user can see what the app looks like. Every item is flagged `demo`. */
+export function makeDemo(days = 90): Pick<AppData, 'readings' | 'medicines' | 'doses' | 'workouts'> {
   let seed = 11;
   const rnd = () => {
     seed = (seed * 9301 + 49297) % 233280;
@@ -17,10 +17,10 @@ export function makeDemo(): Pick<AppData, 'readings' | 'medicines' | 'doses' | '
   const doses: Record<string, DoseLog> = {};
   const now = new Date();
   const kinds: ActivityType[] = ['walk', 'walk', 'yoga', 'walk', 'cycling'];
-  for (let i = 29; i >= 0; i--) {
+  for (let i = days - 1; i >= 0; i--) {
     const d = new Date(now);
     d.setDate(d.getDate() - i);
-    const improve = (i / 30) * 25; // sugar trending better over the month
+    const improve = (i / days) * 30; // sugar trending better over time
     const at = (h: number, m: number) => {
       const x = new Date(d);
       x.setHours(h, m, 0, 0);

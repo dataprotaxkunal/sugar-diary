@@ -15,6 +15,7 @@ export const defaultProfile: Profile = {
   fastingHigh: 130,
   exerciseGoal: 30,
   exerciseReminder: { enabled: true, time: '18:30' },
+  earlyReminderMin: 15,
   sugarChecks: [
     { id: 'fasting', time: '07:30', label: 'fasting', enabled: true },
     { id: 'after', time: '14:30', label: 'after', enabled: false },

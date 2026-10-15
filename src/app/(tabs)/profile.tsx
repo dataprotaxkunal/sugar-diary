@@ -79,7 +79,7 @@ export default function ProfileTab() {
         {data.hasDemo ? (
           <ListRow icon="flask-outline" iconColor={c.warn} iconBg={c.warnSoft} title="Clear sample data" subtitle="Remove the example entries" onPress={clearDemo} />
         ) : (
-          <ListRow icon="flask-outline" iconColor={c.warn} iconBg={c.warnSoft} title="Load sample data" subtitle="See how the charts look with a month of examples" onPress={loadDemo} />
+          <ListRow icon="flask-outline" iconColor={c.warn} iconBg={c.warnSoft} title="Load sample data" subtitle="See how the charts look with 3 months of examples" onPress={loadDemo} />
         )}
       </Card>
 

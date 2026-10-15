@@ -19,8 +19,8 @@ function NotificationBridge() {
 
   // Keep scheduled reminders in sync with medicines and reminder settings.
   const scheduleKey = useMemo(
-    () => JSON.stringify([data.medicines.map((m) => [m.id, m.name, m.dose, m.meal, m.times, m.active, m.demo]), data.profile.sugarChecks, data.profile.exerciseReminder, data.profile.exerciseGoal]),
-    [data.medicines, data.profile.sugarChecks, data.profile.exerciseReminder, data.profile.exerciseGoal],
+    () => JSON.stringify([data.medicines.map((m) => [m.id, m.name, m.dose, m.meal, m.times, m.active, m.demo]), data.profile.sugarChecks, data.profile.exerciseReminder, data.profile.exerciseGoal, data.profile.earlyReminderMin]),
+    [data.medicines, data.profile.sugarChecks, data.profile.exerciseReminder, data.profile.exerciseGoal, data.profile.earlyReminderMin],
   );
   const dataRef = useRef(data);
   dataRef.current = data;

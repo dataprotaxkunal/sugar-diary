@@ -2,9 +2,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Linking, Pressable, View } from 'react-native';
-import { Button, Card, Divider, EmptyState, IconBubble, Row, Screen, SectionHeader, TimeChip, Toggle, Txt } from '../../components/ui';
+import { Button, Card, Chip, Divider, EmptyState, IconBubble, Pill, Row, Screen, SectionHeader, TimeChip, Toggle, Txt } from '../../components/ui';
 import { fmtTime, uid } from '../../lib/date';
-import { CONTEXTS, ctxLabel, medForm, mealLabel } from '../../lib/health';
+import { CONTEXTS, ctxLabel, matchFrequency, medForm, mealLabel, plannedTestsPerWeek, TEST_FREQUENCIES, WEEKDAY_LETTERS } from '../../lib/health';
 import { getPermission, requestPermission, sendTest, syncSchedules } from '../../lib/notifications';
 import { useStore } from '../../lib/store';
 import { space, useColors } from '../../lib/theme';
@@ -24,6 +24,7 @@ export default function Reminders() {
   );
 
   const setChecks = (checks: SugarCheck[]) => updateProfile({ sugarChecks: checks });
+  const freq = matchFrequency(p.sugarChecks);
   const nextCtx = (): ReadingContext => {
     const used = new Set(p.sugarChecks.map((s) => s.label));
     return (CONTEXTS.find((k) => !used.has(k.key))?.key ?? 'random') as ReadingContext;
@@ -82,7 +83,27 @@ export default function Reminders() {
       </Card>
 
       {/* Sugar checks */}
-      <SectionHeader title="Sugar checks" action={p.sugarChecks.length < 5 ? '+ Add' : undefined} onAction={() => setChecks([...p.sugarChecks, { id: uid(), time: '20:00', label: nextCtx(), enabled: true }])} />
+      <SectionHeader title="Sugar checks" action={p.sugarChecks.length < 6 ? '+ Add' : undefined} onAction={() => setChecks([...p.sugarChecks, { id: uid(), time: '20:00', label: nextCtx(), enabled: true }])} />
+      <Card>
+        <Row style={{ justifyContent: 'space-between' }}>
+          <Txt v="h3">How often do you test?</Txt>
+          <Pill text={`${plannedTestsPerWeek(p.sugarChecks)} tests / week`} fg={c.bad} bg={c.badSoft} />
+        </Row>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.sm }}>
+          {TEST_FREQUENCIES.map((f) => (
+            <Chip
+              key={f.key}
+              label={f.label}
+              selected={freq === f.key}
+              color={c.bad}
+              onPress={() => setChecks(f.checks.map((x, i) => ({ id: uid() + i, label: x.label, time: x.time, days: x.days, enabled: true })))}
+            />
+          ))}
+        </View>
+        <Txt v="caption">
+          {freq ? TEST_FREQUENCIES.find((f) => f.key === freq)!.hint + '. ' : 'Custom schedule. '}Ask your doctor how often you should test. You can change times and days below.
+        </Txt>
+      </Card>
       <Card style={{ paddingVertical: space.sm }}>
         {p.sugarChecks.length === 0 ? (
           <Txt v="sub" style={{ paddingVertical: space.md }}>
@@ -110,6 +131,29 @@ export default function Reminders() {
                   </Row>
                   <Toggle value={s.enabled} onChange={(v) => setChecks(p.sugarChecks.map((x) => (x.id === s.id ? { ...x, enabled: v } : x)))} />
                 </Row>
+                <Row style={{ paddingLeft: 52 }} gap={5}>
+                  {WEEKDAY_LETTERS.map((L, d) => {
+                    const all = !s.days || s.days.length === 0 || s.days.length === 7;
+                    const on = all || s.days!.includes(d);
+                    return (
+                      <Pressable
+                        key={d}
+                        accessibilityLabel={`Toggle day ${d}`}
+                        onPress={() => {
+                          const cur = all ? [0, 1, 2, 3, 4, 5, 6] : [...s.days!];
+                          const next = on ? cur.filter((x) => x !== d) : [...cur, d].sort();
+                          if (!next.length) return;
+                          setChecks(p.sugarChecks.map((x) => (x.id === s.id ? { ...x, days: next.length === 7 ? undefined : next } : x)));
+                        }}
+                        style={{ width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center', backgroundColor: on ? c.bad : c.cardAlt }}
+                      >
+                        <Txt v="caption" color={on ? '#FFFFFF' : c.sub} style={{ fontWeight: '700' }}>
+                          {L}
+                        </Txt>
+                      </Pressable>
+                    );
+                  })}
+                </Row>
                 <Row style={{ paddingLeft: 52 }}>
                   <TimeChip time={s.time} onChange={(t) => setChecks(p.sugarChecks.map((x) => (x.id === s.id ? { ...x, time: t } : x)))} />
                   <Pressable onPress={() => setChecks(p.sugarChecks.filter((x) => x.id !== s.id))} hitSlop={8} style={{ marginLeft: 'auto', padding: 6 }}>
@@ -120,6 +164,23 @@ export default function Reminders() {
             </View>
           ))
         )}
+      </Card>
+
+      {/* Early alarm */}
+      <SectionHeader title="Early alarm" />
+      <Card>
+        <Row gap={space.md}>
+          <IconBubble name="timer-outline" color={c.primary} bg={c.primarySoft} />
+          <View style={{ flex: 1 }}>
+            <Txt v="h3">Alert me before medicines and tests</Txt>
+            <Txt v="caption">{p.earlyReminderMin ? `An extra alarm ${p.earlyReminderMin} min before each one, plus the on-time alarm` : 'Only the on-time alarm'}</Txt>
+          </View>
+        </Row>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.sm }}>
+          {[0, 5, 10, 15, 30].map((m) => (
+            <Chip key={m} label={m ? `${m} min` : 'Off'} selected={p.earlyReminderMin === m} onPress={() => updateProfile({ earlyReminderMin: m })} />
+          ))}
+        </View>
       </Card>
 
       {/* Exercise */}

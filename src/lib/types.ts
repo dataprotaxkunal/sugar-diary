@@ -44,7 +44,14 @@ export type Workout = {
   source?: string;
 };
 
-export type SugarCheck = { id: string; time: string; label: string; enabled: boolean };
+export type SugarCheck = {
+  id: string;
+  time: string;
+  label: string;
+  enabled: boolean;
+  /** Days of the week this check repeats on (0 = Sunday … 6 = Saturday). Missing or all seven = every day. */
+  days?: number[];
+};
 
 export type Profile = {
   name: string;
@@ -54,6 +61,8 @@ export type Profile = {
   fastingHigh: number;
   exerciseGoal: number; // minutes per day
   exerciseReminder: { enabled: boolean; time: string };
+  /** Extra alert this many minutes before each medicine and sugar check (0 = off). */
+  earlyReminderMin: number;
   sugarChecks: SugarCheck[];
   onboarded: boolean;
 };

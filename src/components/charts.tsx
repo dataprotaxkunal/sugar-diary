@@ -76,7 +76,7 @@ export function GlucoseChart({ readings, days, profile, height = 220 }: { readin
         )}
         {ticks.map((d, i) =>
           d ? (
-            <SvgText key={d} x={L + ((i + 0.5) / days.length) * (w - L - R)} y={height - 6} fontSize={10} fill={c.sub} textAnchor="middle">
+            <SvgText key={d} x={L + ((i + 0.5) / days.length) * (w - L - R)} y={height - 6} fontSize={10} fill={c.sub} textAnchor={L + ((i + 0.5) / days.length) * (w - L - R) > w - R - 14 ? 'end' : 'middle'}>
               {fmtDay(new Date(d + 'T00:00'))}
             </SvgText>
           ) : null,
@@ -132,7 +132,7 @@ export function DayBars({
             <G key={days[i]}>
               <Rect x={bx} y={height - B - h} width={bw * 0.64} height={h} rx={Math.min(5, bw * 0.3)} fill={colorFor(v)} />
               {i === lastIdx && v > 0 ? (
-                <SvgText x={bx + bw * 0.32} y={height - B - h - 5} fontSize={11} fontWeight="bold" fill={c.text} textAnchor="middle">
+                <SvgText x={Math.min(bx + bw * 0.32, w - R)} y={height - B - h - 5} fontSize={11} fontWeight="bold" fill={c.text} textAnchor={bx + bw * 0.32 > w - R - 12 ? 'end' : 'middle'}>
                   {format(v)}
                 </SvgText>
               ) : null}
@@ -141,7 +141,7 @@ export function DayBars({
         })}
         {ticks.map((d, i) =>
           d ? (
-            <SvgText key={d} x={L + (i + 0.5) * bw} y={height - 6} fontSize={10} fill={c.sub} textAnchor="middle">
+            <SvgText key={d} x={Math.min(w - R, Math.max(L, L + (i + 0.5) * bw))} y={height - 6} fontSize={10} fill={c.sub} textAnchor={L + (i + 0.5) * bw > w - R - 14 ? 'end' : 'middle'}>
               {n <= 7 ? ['S', 'M', 'T', 'W', 'T', 'F', 'S'][new Date(d + 'T00:00').getDay()] : fmtDay(new Date(d + 'T00:00'))}
             </SvgText>
           ) : null,

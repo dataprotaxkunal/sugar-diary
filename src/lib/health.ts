@@ -105,3 +105,53 @@ export const TIPS = [
   'Take your tablets at the same time each day so they work evenly.',
   'Sleep matters: poor sleep can raise next-morning fasting sugar.',
 ];
+
+/* ---------- Sugar test frequency ---------- */
+
+export type CheckPlan = { label: ReadingContext; time: string; days?: number[] };
+
+export const TEST_FREQUENCIES: { key: string; label: string; hint: string; checks: CheckPlan[] }[] = [
+  { key: '1w', label: 'Once a week', hint: 'Fasting, every Sunday', checks: [{ label: 'fasting', time: '07:30', days: [0] }] },
+  { key: '3w', label: '3 days a week', hint: 'Fasting on Mon, Wed, Fri', checks: [{ label: 'fasting', time: '07:30', days: [1, 3, 5] }] },
+  { key: '1d', label: 'Once a day', hint: 'Fasting every morning', checks: [{ label: 'fasting', time: '07:30' }] },
+  {
+    key: '2d',
+    label: 'Twice a day',
+    hint: 'Fasting + 2 hrs after lunch',
+    checks: [
+      { label: 'fasting', time: '07:30' },
+      { label: 'after', time: '14:30' },
+    ],
+  },
+  {
+    key: '4d',
+    label: '4 times a day',
+    hint: 'Fasting, after breakfast, after lunch, bedtime',
+    checks: [
+      { label: 'fasting', time: '07:30' },
+      { label: 'after', time: '10:30' },
+      { label: 'after', time: '14:30' },
+      { label: 'bedtime', time: '22:00' },
+    ],
+  },
+];
+
+const everyDay = (d?: number[]) => !d || d.length === 0 || d.length === 7;
+const sig = (cs: { label: string; time: string; days?: number[] }[]) =>
+  cs
+    .map((c) => `${c.label}@${c.time}@${everyDay(c.days) ? '*' : [...c.days!].sort().join('')}`)
+    .sort()
+    .join('|');
+
+/** Which preset (if any) the current enabled checks match. */
+export function matchFrequency(checks: { label: string; time: string; days?: number[]; enabled: boolean }[]) {
+  const s = sig(checks.filter((c) => c.enabled));
+  return TEST_FREQUENCIES.find((f) => sig(f.checks) === s)?.key ?? null;
+}
+
+/** Planned sugar tests per week from the reminder schedule. */
+export function plannedTestsPerWeek(checks: { enabled: boolean; days?: number[] }[]) {
+  return checks.filter((c) => c.enabled).reduce((n, c) => n + (everyDay(c.days) ? 7 : c.days!.length), 0);
+}
+
+export const WEEKDAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
