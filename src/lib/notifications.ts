@@ -1,6 +1,6 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
-import { fmtTime, parseHM } from './date';
+import { addDays, fmtTime, nextIntervalDay, parseHM, ymd } from './date';
 import { mealLabel } from './health';
 import type { AppData } from './types';
 
@@ -131,9 +131,53 @@ export async function syncSchedules(data: AppData) {
           });
       }
     }
+    /** One-off alarm on a specific date and time (used for every-N-days plans). */
+    const onDate = (day: string, time: string, minutesBefore: number, channelId: string, content: Notifications.NotificationContentInput) => {
+      const { h, m } = parseHM(time);
+      const when = new Date(day + 'T00:00:00');
+      when.setHours(h, m, 0, 0);
+      const ts = when.getTime() - minutesBefore * 60000;
+      if (ts > Date.now() + 5000) jobs.push(Notifications.scheduleNotificationAsync({ content, trigger: { type: T.DATE, date: ts, channelId } }));
+    };
+
     for (const c of data.profile.sugarChecks) {
       if (!c.enabled) continue;
       const d: NotifData = { kind: 'sugar', ctx: c.label };
+      if (c.everyDays) {
+        // Repeating "every N days" isn't a native trigger, so book the next 10 test days.
+        // The schedule is rebuilt every time the app opens, so it keeps rolling forward.
+        const today = ymd(new Date());
+        let day = nextIntervalDay(c.startDate ?? today, c.everyDays, today);
+        for (let i = 0; i < 10; i++, day = addDays(day, c.everyDays)) {
+          onDate(day, c.time, 0, 'health', {
+            title: '🩸 Sugar test day',
+            body: `${labelFor(c.label)} reading (every ${c.everyDays} days). Tap to log it.`,
+            data: d,
+            categoryIdentifier: CAT_SUGAR,
+            sound: 'default',
+            color: '#0F7A63',
+          });
+          if (early > 0)
+            onDate(day, c.time, early, 'health', {
+              title: `⏰ Sugar test in ${early} min`,
+              body: `${labelFor(c.label)} reading at ${fmtTime(c.time)}.${c.label === 'fasting' ? ' Don’t eat or drink tea before it.' : ''}`,
+              data: { kind: 'early' },
+              sound: 'default',
+              color: '#0F7A63',
+            });
+        }
+        // Evening-before heads-up for fasting tests, so nobody eats late by mistake.
+        if (c.label === 'fasting')
+          for (let i = 0, dd = nextIntervalDay(c.startDate ?? today, c.everyDays, addDays(today, 1)); i < 10; i++, dd = addDays(dd, c.everyDays))
+            onDate(addDays(dd, -1), '21:00', 0, 'health', {
+              title: '🩸 Fasting sugar test tomorrow',
+              body: `Test at ${fmtTime(c.time)} before eating. Avoid late-night snacks.`,
+              data: { kind: 'early' },
+              sound: 'default',
+              color: '#0F7A63',
+            });
+        continue;
+      }
       at(c.time, c.days, 0, 'health', {
         title: '🩸 Time to check your sugar',
         body: `${labelFor(c.label)} reading. Tap to log it.`,

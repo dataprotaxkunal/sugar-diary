@@ -3,12 +3,26 @@ import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Linking, Pressable, View } from 'react-native';
 import { Button, Card, Chip, Divider, EmptyState, IconBubble, Pill, Row, Screen, SectionHeader, TimeChip, Toggle, Txt } from '../../components/ui';
-import { fmtTime, uid } from '../../lib/date';
+import { addDays, fmtDay, fmtTime, hm, nextIntervalDay, uid, ymd } from '../../lib/date';
 import { CONTEXTS, ctxLabel, matchFrequency, medForm, mealLabel, plannedTestsPerWeek, TEST_FREQUENCIES, WEEKDAY_LETTERS } from '../../lib/health';
 import { getPermission, requestPermission, sendTest, syncSchedules } from '../../lib/notifications';
 import { useStore } from '../../lib/store';
 import { space, useColors } from '../../lib/theme';
 import type { ReadingContext, SugarCheck } from '../../lib/types';
+
+/** First day of a new every-N-days plan: today if the test time hasn't passed yet, otherwise tomorrow. */
+function firstTestDay(time: string) {
+  const today = ymd(new Date());
+  return hm(new Date()) < time ? today : addDays(today, 1);
+}
+
+function nextTestLabel(s: SugarCheck) {
+  const today = ymd(new Date());
+  const start = s.startDate ?? today;
+  let next = nextIntervalDay(start, s.everyDays!, today);
+  if (next === today && hm(new Date()) > s.time) next = nextIntervalDay(start, s.everyDays!, addDays(today, 1));
+  return `${next === today ? 'Today' : next === addDays(today, 1) ? 'Tomorrow' : fmtDay(new Date(next + 'T12:00:00'))}, ${fmtTime(s.time)}`;
+}
 
 export default function Reminders() {
   const c = useColors();
@@ -96,7 +110,7 @@ export default function Reminders() {
               label={f.label}
               selected={freq === f.key}
               color={c.bad}
-              onPress={() => setChecks(f.checks.map((x, i) => ({ id: uid() + i, label: x.label, time: x.time, days: x.days, enabled: true })))}
+              onPress={() => setChecks(f.checks.map((x, i) => ({ id: uid() + i, label: x.label, time: x.time, days: x.days, everyDays: x.everyDays, startDate: x.everyDays ? firstTestDay(x.time) : undefined, enabled: true })))}
             />
           ))}
         </View>
@@ -131,6 +145,28 @@ export default function Reminders() {
                   </Row>
                   <Toggle value={s.enabled} onChange={(v) => setChecks(p.sugarChecks.map((x) => (x.id === s.id ? { ...x, enabled: v } : x)))} />
                 </Row>
+                {s.everyDays ? (
+                  <View style={{ paddingLeft: 52, gap: 6 }}>
+                    <Row gap={6}>
+                      {[7, 15, 30].map((n) => (
+                        <Chip key={n} label={`Every ${n} days`} selected={s.everyDays === n} color={c.bad} onPress={() => setChecks(p.sugarChecks.map((x) => (x.id === s.id ? { ...x, everyDays: n } : x)))} />
+                      ))}
+                    </Row>
+                    <Row gap={6} style={{ flexWrap: 'wrap' }}>
+                      <Txt v="caption">Next test: {nextTestLabel(s)}</Txt>
+                      <Pressable hitSlop={6} onPress={() => setChecks(p.sugarChecks.map((x) => (x.id === s.id ? { ...x, startDate: ymd(new Date()) } : x)))}>
+                        <Txt v="caption" color={c.primary} style={{ fontWeight: '700' }}>
+                          Start from today
+                        </Txt>
+                      </Pressable>
+                      <Pressable hitSlop={6} onPress={() => setChecks(p.sugarChecks.map((x) => (x.id === s.id ? { ...x, everyDays: undefined, startDate: undefined } : x)))}>
+                        <Txt v="caption" color={c.primary} style={{ fontWeight: '700' }}>
+                          Use weekdays instead
+                        </Txt>
+                      </Pressable>
+                    </Row>
+                  </View>
+                ) : (
                 <Row style={{ paddingLeft: 52 }} gap={5}>
                   {WEEKDAY_LETTERS.map((L, d) => {
                     const all = !s.days || s.days.length === 0 || s.days.length === 7;
@@ -154,6 +190,7 @@ export default function Reminders() {
                     );
                   })}
                 </Row>
+                )}
                 <Row style={{ paddingLeft: 52 }}>
                   <TimeChip time={s.time} onChange={(t) => setChecks(p.sugarChecks.map((x) => (x.id === s.id ? { ...x, time: t } : x)))} />
                   <Pressable onPress={() => setChecks(p.sugarChecks.filter((x) => x.id !== s.id))} hitSlop={8} style={{ marginLeft: 'auto', padding: 6 }}>

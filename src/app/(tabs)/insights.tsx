@@ -12,6 +12,7 @@ import { adherenceByDay } from '../../lib/today';
 
 const RANGES = [
   { n: 7, label: '7D' },
+  { n: 15, label: '15D' },
   { n: 30, label: '30D' },
   { n: 90, label: '90D' },
 ];
@@ -56,7 +57,7 @@ export default function Insights() {
         <Txt v="h1">Insights</Txt>
         <View style={{ flexDirection: 'row', backgroundColor: c.cardAlt, borderRadius: radius.md, padding: 4 }}>
           {RANGES.map((r) => (
-            <Pressable key={r.n} onPress={() => setRange(r.n)} style={{ paddingHorizontal: 14, paddingVertical: 7, borderRadius: 12, backgroundColor: range === r.n ? c.card : 'transparent' }}>
+            <Pressable key={r.n} onPress={() => setRange(r.n)} style={{ paddingHorizontal: 11, paddingVertical: 7, borderRadius: 12, backgroundColor: range === r.n ? c.card : 'transparent' }}>
               <Txt v="sub" color={range === r.n ? c.text : c.sub} style={{ fontWeight: '700' }}>
                 {r.label}
               </Txt>
@@ -196,6 +197,7 @@ export default function Insights() {
             </Card>
           ) : null}
 
+          <Button title="PDF report for doctor" icon="document-text-outline" onPress={() => router.push('/report')} />
           <Button title="See all readings" kind="secondary" icon="list-outline" onPress={() => router.push('/history')} />
           <Txt v="caption" center>
             Estimated HbA1c uses the Glucose Management Indicator formula. Always confirm with a lab test and your doctor.

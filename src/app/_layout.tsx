@@ -86,6 +86,7 @@ function Navigator() {
         <Stack.Screen name="medicine" options={{ title: 'Medicine', presentation: 'modal', animation: 'slide_from_bottom' }} />
         <Stack.Screen name="history" options={{ title: 'History' }} />
         <Stack.Screen name="targets" options={{ title: 'Targets & goals' }} />
+        <Stack.Screen name="report" options={{ title: 'Report for doctor' }} />
       </Stack>
     </ThemeProvider>
   );

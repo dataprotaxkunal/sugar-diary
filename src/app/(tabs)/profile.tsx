@@ -2,11 +2,10 @@ import { Ionicons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Share, View } from 'react-native';
+import { Alert, View } from 'react-native';
 import { HealthCard } from '../../components/HealthCard';
 import { Card, Chip, Divider, Field, ListRow, Row, Screen, Txt } from '../../components/ui';
-import { fmtDay, hm, ymd } from '../../lib/date';
-import { activity, ctxLabel, DIABETES_TYPES } from '../../lib/health';
+import { DIABETES_TYPES } from '../../lib/health';
 import { useStore } from '../../lib/store';
 import { space, useColors } from '../../lib/theme';
 
@@ -15,19 +14,6 @@ export default function ProfileTab() {
   const { data, updateProfile, loadDemo, clearDemo, resetAll } = useStore();
   const p = data.profile;
   const [name, setName] = useState(p.name);
-
-  const exportData = async () => {
-    const lines = ['Type,Date,Time,Value,Details,Note'];
-    for (const r of data.readings) lines.push(['Blood sugar', ymd(r.ts), hm(r.ts), `${r.value} mg/dL`, ctxLabel(r.ctx), (r.note ?? '').replace(/,/g, ' ')].join(','));
-    for (const w of data.workouts) lines.push(['Exercise', ymd(w.ts), hm(w.ts), `${w.minutes} min`, activity(w.type).label, (w.note ?? '').replace(/,/g, ' ')].join(','));
-    for (const [k, v] of Object.entries(data.doses)) {
-      const [d, medId, t] = k.split('|');
-      const m = data.medicines.find((x) => x.id === medId);
-      if (m) lines.push(['Medicine', d, t, v.status, `${m.name} ${m.dose}`.trim(), ''].join(','));
-    }
-    lines.sort((a, b) => (a.startsWith('Type') ? -1 : b.startsWith('Type') ? 1 : a.split(',').slice(1, 3).join() < b.split(',').slice(1, 3).join() ? -1 : 1));
-    await Share.share({ title: 'Sugar Diary export', message: `Sugar Diary report for ${p.name || 'me'} (exported ${fmtDay(Date.now())})\n\n${lines.join('\n')}` });
-  };
 
   const confirmReset = () =>
     Alert.alert('Delete all data?', 'This removes every reading, medicine and reminder from this phone. It cannot be undone.', [
@@ -74,7 +60,7 @@ export default function ProfileTab() {
         <Divider />
         <ListRow icon="time-outline" iconColor={c.med} iconBg={c.medSoft} title="History" subtitle="All readings and workouts" onPress={() => router.push('/history')} />
         <Divider />
-        <ListRow icon="share-outline" iconColor={c.ex} iconBg={c.exSoft} title="Share report with doctor" subtitle="Send your log via WhatsApp, email and more" onPress={exportData} />
+        <ListRow icon="document-text-outline" iconColor={c.ex} iconBg={c.exSoft} title="PDF report for doctor" subtitle="Last 7, 15, 30 or 90 days · share on WhatsApp or email" onPress={() => router.push('/report')} />
         <Divider />
         {data.hasDemo ? (
           <ListRow icon="flask-outline" iconColor={c.warn} iconBg={c.warnSoft} title="Clear sample data" subtitle="Remove the example entries" onPress={clearDemo} />

@@ -70,3 +70,25 @@ export const greeting = (d = new Date()) => {
 };
 
 export const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
+
+/** Whole calendar days from a (YYYY-MM-DD) to b (YYYY-MM-DD); negative if b is earlier. */
+export const daysBetween = (a: string, b: string) => Math.round((new Date(b + 'T12:00:00').getTime() - new Date(a + 'T12:00:00').getTime()) / 864e5);
+
+export const addDays = (key: string, n: number) => {
+  const d = new Date(key + 'T12:00:00');
+  d.setDate(d.getDate() + n);
+  return ymd(d);
+};
+
+/** For an every-N-days plan: is `day` a test day? */
+export const isIntervalDay = (start: string, every: number, day: string) => {
+  const diff = daysBetween(start, day);
+  return diff >= 0 && diff % every === 0;
+};
+
+/** Next test day on or after `from` for an every-N-days plan. */
+export const nextIntervalDay = (start: string, every: number, from: string) => {
+  const diff = daysBetween(start, from);
+  if (diff <= 0) return start;
+  return addDays(start, Math.ceil(diff / every) * every);
+};

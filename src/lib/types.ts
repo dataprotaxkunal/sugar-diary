@@ -51,6 +51,10 @@ export type SugarCheck = {
   enabled: boolean;
   /** Days of the week this check repeats on (0 = Sunday … 6 = Saturday). Missing or all seven = every day. */
   days?: number[];
+  /** Repeat every N days (7, 15, 30…) counted from `startDate`, instead of weekdays. */
+  everyDays?: number;
+  /** YYYY-MM-DD of the first test in an every-N-days plan. */
+  startDate?: string;
 };
 
 export type Profile = {

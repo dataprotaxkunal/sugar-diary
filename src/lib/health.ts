@@ -108,10 +108,12 @@ export const TIPS = [
 
 /* ---------- Sugar test frequency ---------- */
 
-export type CheckPlan = { label: ReadingContext; time: string; days?: number[] };
+export type CheckPlan = { label: ReadingContext; time: string; days?: number[]; everyDays?: number };
 
 export const TEST_FREQUENCIES: { key: string; label: string; hint: string; checks: CheckPlan[] }[] = [
-  { key: '1w', label: 'Once a week', hint: 'Fasting, every Sunday', checks: [{ label: 'fasting', time: '07:30', days: [0] }] },
+  { key: '30n', label: 'Every 30 days', hint: 'One fasting test a month', checks: [{ label: 'fasting', time: '07:30', everyDays: 30 }] },
+  { key: '15n', label: 'Every 15 days', hint: 'One fasting test every 15 days', checks: [{ label: 'fasting', time: '07:30', everyDays: 15 }] },
+  { key: '7n', label: 'Every 7 days', hint: 'One fasting test a week', checks: [{ label: 'fasting', time: '07:30', everyDays: 7 }] },
   { key: '3w', label: '3 days a week', hint: 'Fasting on Mon, Wed, Fri', checks: [{ label: 'fasting', time: '07:30', days: [1, 3, 5] }] },
   { key: '1d', label: 'Once a day', hint: 'Fasting every morning', checks: [{ label: 'fasting', time: '07:30' }] },
   {
@@ -137,21 +139,28 @@ export const TEST_FREQUENCIES: { key: string; label: string; hint: string; check
 ];
 
 const everyDay = (d?: number[]) => !d || d.length === 0 || d.length === 7;
-const sig = (cs: { label: string; time: string; days?: number[] }[]) =>
+const sig = (cs: { label: string; time: string; days?: number[]; everyDays?: number }[]) =>
   cs
-    .map((c) => `${c.label}@${c.time}@${everyDay(c.days) ? '*' : [...c.days!].sort().join('')}`)
+    .map((c) => `${c.label}@${c.time}@${c.everyDays ? 'n' + c.everyDays : everyDay(c.days) ? '*' : [...c.days!].sort().join('')}`)
     .sort()
     .join('|');
 
 /** Which preset (if any) the current enabled checks match. */
-export function matchFrequency(checks: { label: string; time: string; days?: number[]; enabled: boolean }[]) {
+export function matchFrequency(checks: { label: string; time: string; days?: number[]; everyDays?: number; enabled: boolean }[]) {
   const s = sig(checks.filter((c) => c.enabled));
   return TEST_FREQUENCIES.find((f) => sig(f.checks) === s)?.key ?? null;
 }
 
 /** Planned sugar tests per week from the reminder schedule. */
-export function plannedTestsPerWeek(checks: { enabled: boolean; days?: number[] }[]) {
-  return checks.filter((c) => c.enabled).reduce((n, c) => n + (everyDay(c.days) ? 7 : c.days!.length), 0);
+export function plannedTestsPerWeek(checks: { enabled: boolean; days?: number[]; everyDays?: number }[]) {
+  return checks.filter((c) => c.enabled).reduce((n, c) => n + (c.everyDays ? 7 / c.everyDays : everyDay(c.days) ? 7 : c.days!.length), 0);
+}
+
+/** Short human description of how often a check repeats. */
+export function checkRepeatLabel(c: { days?: number[]; everyDays?: number }) {
+  if (c.everyDays) return `Every ${c.everyDays} days`;
+  if (everyDay(c.days)) return 'Every day';
+  return c.days!.map((d) => ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d]).join(', ');
 }
 
 export const WEEKDAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
