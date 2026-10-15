@@ -3,7 +3,7 @@
     "name": "Sugar Diary",
     "slug": "sugar-diary",
     "scheme": "sugardiary",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -12,7 +12,7 @@
     },
     "android": {
       "package": "com.sugardiary.app",
-      "versionCode": 1,
+      "versionCode": 2,
       "adaptiveIcon": {
         "backgroundColor": "#0F7A63",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -53,7 +53,14 @@
         "expo-build-properties",
         {
           "android": {
-            "minSdkVersion": 26
+            "minSdkVersion": 26,
+            "buildArchs": [
+              "arm64-v8a"
+            ],
+            "useLegacyPackaging": true,
+            "enableMinifyInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true,
+            "extraProguardRules": "-keep class com.reactcommunity.rndatetimepicker.** { *; }\n-keep class com.reactnativecommunity.asyncstorage.** { *; }\n-keep class com.horcrux.svg.** { *; }\n-keep class com.swmansion.rnscreens.** { *; }\n-keep class com.th3rdwave.safeareacontext.** { *; }\n-keep class dev.matinzd.healthconnect.** { *; }\n-keep class androidx.health.connect.client.** { *; }\n-keep class expo.modules.** { *; }"
           }
         }
       ]
