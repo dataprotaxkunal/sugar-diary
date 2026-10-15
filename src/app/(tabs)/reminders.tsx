@@ -219,7 +219,7 @@ export default function Reminders() {
         />
       ) : null}
       <Txt v="caption" center>
-        Reminders repeat every day at the times above. Some phones (Xiaomi, Oppo, Vivo, Realme) stop reminders for apps in battery saver. If alerts don’t arrive, set Sugar Diary’s battery usage to “No restrictions”.
+        Reminders repeat at the times and days above. Some phones (Xiaomi, Oppo, Vivo, Realme) stop reminders for apps in battery saver. If alerts don’t arrive, set Sugar Diary’s battery usage to “No restrictions”.
       </Txt>
     </Screen>
   );

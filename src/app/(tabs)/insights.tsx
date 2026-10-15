@@ -134,7 +134,7 @@ export default function Insights() {
             <Row gap={space.sm}>
               <MiniFact value={(testsPerDay.reduce((a, b) => a + b, 0) / range).toFixed(1)} label="tests / day" />
               <MiniFact value={`${testsPerDay.filter((n) => n > 0).length}/${range}`} label="days tested" />
-              <MiniFact value={String(Math.round(testsPerWeekActual))} label={`a week · plan ${plannedWeek}`} accent={plannedWeek && testsPerWeekActual >= plannedWeek * 0.8 ? c.good : c.warn} />
+              <MiniFact value={String(Math.round(testsPerWeekActual))} label={`per week (plan ${plannedWeek})`} accent={plannedWeek && testsPerWeekActual >= plannedWeek * 0.8 ? c.good : c.warn} />
             </Row>
             <DayBars days={days} values={testsPerDay} max={Math.max(4, ...testsPerDay, plannedDay)} goal={plannedDay || undefined} format={(v) => String(Math.round(v))} colorFor={(v) => (v >= Math.max(1, Math.floor(plannedDay)) ? c.bad : c.badSoft)} height={130} />
             <Txt v="caption">Readings logged each day.{plannedDay ? ` Dashed line is your plan (${plannedWeek} a week).` : ' Set a testing plan under Reminders.'}</Txt>
@@ -227,7 +227,7 @@ function MiniFact({ value, label, accent }: { value: string; label: string; acce
       <Txt v="h2" color={accent} style={{ fontVariant: ['tabular-nums'] }}>
         {value}
       </Txt>
-      <Txt v="caption" numberOfLines={1}>
+      <Txt v="caption" numberOfLines={2}>
         {label}
       </Txt>
     </View>
